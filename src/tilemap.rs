@@ -2,25 +2,37 @@ use std::fs;
 use notan::draw::*;
 use notan::prelude::*;
 
-pub struct Tile<'a> {
+const TILE_SIZE: f32 = 32.0;
+
+const MAP_OFFSET: f32 = 64.0;
+
+#[derive(Clone)]
+pub struct Tile {
     pub solid: bool,
-    img: &'a Texture,
+    img: Texture,
 }
 
-pub struct TileMap<'a> {
-    pub map: Vec<Tile<'a>>,
+#[derive(Clone)]
+pub struct TileMap {
+    pub map: Vec<usize>,
     pub width: u32,
     pub height: u32,
-    tiles: Vec<Texture>,
+    tiles: Vec<Tile>,
+    dbg_tile: Tile
 }
 
-impl <'a>TileMap<'a> {
-    pub fn new(width: u32, height: u32, gfx: &mut Graphics) -> TileMap<'a> {
+impl TileMap {
+    pub fn new(width: u32, height: u32, gfx: &mut Graphics) -> TileMap {
+        let dbg_tile = match TileMap::load_single_texture(gfx, include_bytes!("assets/debug.png")) {
+            Ok(tex) => tex,
+            Err(e) => panic!("couldnt load debug texture with error:\n{}", e),
+        };
         let mut t = TileMap {
             map: Vec::new(),
             width,
             height,
-            tiles: Vec::new()
+            tiles: Vec::new(),
+            dbg_tile: Tile {solid: false, img: dbg_tile },
         };
         t.map.reserve((width * height) as usize);
         match t.load_textures(gfx) {
@@ -30,14 +42,40 @@ impl <'a>TileMap<'a> {
         t
     }
 
-    pub fn new_from_file<'b>(path: &str, gfx: &'b mut Graphics) -> TileMap<'a> {
-        let t = TileMap::new(32, 32, gfx);
+    pub fn new_from_file<'b>(path: &str, gfx: &'b mut Graphics) -> TileMap {
         let map_string = match fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => panic!("could not load map at {}, had error: {}", path, e),
         };
         print!("loaded map:\n{}", map_string);
+        let lines = map_string.lines();
+        let mut height: u32 = 0;
+        let mut width: u32 = 0;
+        for _ in lines.clone().nth(0).unwrap().split(','){
+            width+=1;
+        }
+        width -=1; // because otherwise it counts the newline too
+        for _ in lines.clone() {
+            height += 1;
+        }
+        let mut t = TileMap::new(width, height, gfx);
+        t.load_terrain(map_string.as_str());
+        println!("width: {}\nheight: {}", width, height);
         t
+    }
+
+    pub fn load_terrain(&mut self, mapstring: &str) {
+        for line in mapstring.lines() {
+            for tile in line.split(',') {
+                if tile != "" {
+                    let index = match tile.parse::<usize>() {
+                        Ok(i) => i,
+                        Err(e) => panic!("Tried to parse '{:?}' with error:\n{}", tile, e),
+                    };
+                    self.map.push(index);
+                }
+            }
+        }
     }
 
     fn load_textures(&mut self, g: &mut Graphics) -> Result<(), String> {
@@ -45,8 +83,9 @@ impl <'a>TileMap<'a> {
         files.push(include_bytes!("assets/tile1.png"));
         files.push(include_bytes!("assets/tile2.png"));
         for f in files {
-            self.tiles.push(TileMap::load_single_texture(g, f)?);
+            self.tiles.push(Tile{ solid: false, img: TileMap::load_single_texture(g, f).unwrap()} );
         }
+        self.tiles[1].solid = true;
         Ok(())
     }
 
@@ -57,11 +96,21 @@ impl <'a>TileMap<'a> {
         .build()
     }
 
-    pub fn draw(&self, g: &mut Graphics) {
-        let mut d = g.create_draw();
+    pub fn draw(&self, gfx: &mut Graphics) {
+        let mut d = gfx.create_draw();
         d.clear(Color::BLACK);
-        d.image(&self.tiles[0]).position(64.0, 64.0).size(64.0, 64.0);
-        d.image(&self.tiles[1]).position(128.0, 64.0).size(64.0, 64.0);
-        g.render(&d);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                self.draw_single_tile(&mut d, x, y);
+            }
+        }
+        gfx.render(&d);
+    }
+
+    fn draw_single_tile(&self, d: &mut Draw, x:u32, y:u32) {
+        let index = (y*self.width + x) as usize;
+        d.image(&self.tiles.get(self.map[index]).unwrap_or(&self.dbg_tile).img)
+            .position(MAP_OFFSET + x as f32 * TILE_SIZE, MAP_OFFSET + y as f32 * TILE_SIZE)
+            .size(TILE_SIZE, TILE_SIZE);
     }
 }

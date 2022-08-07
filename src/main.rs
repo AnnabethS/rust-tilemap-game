@@ -9,7 +9,7 @@ const WIN_HEIGHT: i32 = 720;
 
 #[derive(AppState)]
 struct State {
-    map: tilemap::TileMap<'static>,
+    map: tilemap::TileMap,
 }
 
 #[notan_main]
