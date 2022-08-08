@@ -1,3 +1,5 @@
+use crate::Rect;
+
 use std::fs;
 use notan::draw::*;
 use notan::prelude::*;
@@ -42,7 +44,7 @@ impl TileMap {
         t
     }
 
-    pub fn new_from_file<'b>(path: &str, gfx: &'b mut Graphics) -> TileMap {
+    pub fn new_from_file<'b>(path: &str, gfx: &'b mut Graphics, rects: &mut Vec<Rect>) -> TileMap {
         let map_string = match fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => panic!("could not load map at {}, had error: {}", path, e),
@@ -61,7 +63,28 @@ impl TileMap {
         let mut t = TileMap::new(width, height, gfx);
         t.load_terrain(map_string.as_str());
         println!("width: {}\nheight: {}", width, height);
+        t.generate_collision_rects(rects);
         t
+    }
+
+    fn generate_collision_rects(&self, rects: &mut Vec<Rect>) {
+        for x in 0..self.width {
+            for y in 0..self.height {
+                if self.tile_is_solid(x,y) {
+                    rects.push(Rect::new_sq(
+                        x as f32 * TILE_SIZE + MAP_OFFSET,
+                        y as f32 * TILE_SIZE + MAP_OFFSET,
+                        TILE_SIZE));
+                }
+            }
+        }
+    }
+
+    fn tile_is_solid(&self, x: u32, y: u32) -> bool {
+        self.tiles
+            .get(self.map[(x + self.width * y) as usize]) // try get the tile we want
+            .unwrap_or(&self.dbg_tile) // if we cant get it, fall back on dbg_tile
+            .solid // check if its solid or not
     }
 
     pub fn load_terrain(&mut self, mapstring: &str) {
@@ -96,15 +119,12 @@ impl TileMap {
         .build()
     }
 
-    pub fn draw(&self, gfx: &mut Graphics) {
-        let mut d = gfx.create_draw();
-        d.clear(Color::BLACK);
+    pub fn draw(&self, d: &mut Draw) {
         for y in 0..self.height {
             for x in 0..self.width {
-                self.draw_single_tile(&mut d, x, y);
+                self.draw_single_tile(d, x, y);
             }
         }
-        gfx.render(&d);
     }
 
     fn draw_single_tile(&self, d: &mut Draw, x:u32, y:u32) {
