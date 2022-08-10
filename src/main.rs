@@ -2,11 +2,14 @@ pub mod tilemap;
 pub mod rect;
 pub mod fow;
 
+use libm::acos;
 use notan::draw::*;
 use notan::prelude::*;
 use std::process;
 use rect::*;
 use libm::atan2;
+use std::fmt;
+use std::num::*;
 
 const WIN_WIDTH: i32 = 1280;
 const WIN_HEIGHT: i32 = 720;
@@ -32,6 +35,16 @@ impl Point {
 
     fn to_tuple(&self) -> (f32, f32) {
         (self.x, self.y)
+    }
+
+    fn dist(&self, other: &Point) -> f32 {
+        ((self.x - other.x).powi(2) + (self.y - other.y).powi(2)).sqrt()
+    }
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "x: {}, y: {}", self.x, self.y)
     }
 }
 
@@ -68,6 +81,7 @@ fn update(app: &mut App, state: &mut State) {
 }
 
 fn wide_corners(r: Rect, x: f32, y: f32) -> (Point, Point) {
+    let player = Point {x,y};
     let mut corners: Vec<Point> = Vec::new();
     corners.reserve(4);
     corners.push(Point::new(r.x, r.y));
@@ -78,11 +92,10 @@ fn wide_corners(r: Rect, x: f32, y: f32) -> (Point, Point) {
     let mut c2: &Point = corners.get(1).unwrap();
     let mut widest_angle = 0.0;
     for i in 0..4 {
-        for j in 0..4 {
+        for j in i..4 {
             if i==j { continue; }
-            let current_angle = atan2((y - corners[i].y) as f64, (x - corners[i].x) as f64) -
-                                atan2((y - corners[j].y) as f64, (x - corners[j].x) as f64);
-            if current_angle > widest_angle {
+            let current_angle = cosine_rule_angle(&player, &corners[i], &corners[j]);
+            if current_angle >= widest_angle {
                 widest_angle = current_angle;
                 c1 = &corners[i];
                 c2 = &corners[j];
@@ -90,6 +103,13 @@ fn wide_corners(r: Rect, x: f32, y: f32) -> (Point, Point) {
         }
     }
     (c1.clone(), c2.clone())
+}
+
+fn cosine_rule_angle(point_a: &Point, point_b: &Point, point_c: &Point) -> f64 {
+    let a = point_b.dist(&point_c);
+    let b = point_a.dist(&point_c);
+    let c = point_a.dist(&point_b);
+    acos(((b.powi(2) + c.powi(2) - a.powi(2)) / (2.0 * b * c)) as f64)
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
