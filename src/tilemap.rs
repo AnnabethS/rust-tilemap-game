@@ -1,4 +1,5 @@
 use crate::Rect;
+use crate::Point;
 
 use std::fs;
 use notan::draw::*;
@@ -132,5 +133,11 @@ impl TileMap {
         d.image(&self.tiles.get(self.map[index]).unwrap_or(&self.dbg_tile).img)
             .position(MAP_OFFSET + x as f32 * TILE_SIZE, MAP_OFFSET + y as f32 * TILE_SIZE)
             .size(TILE_SIZE, TILE_SIZE);
+    }
+
+    fn gen_fow_paths(&self, x:f32, y:f32) -> Vec<Vec<Point>>
+    {
+        let mut test:Vec<Point> = Vec::new();
+        todo!()
     }
 }
