@@ -83,7 +83,47 @@ pub fn gen_fow_polygon(r: Rect, player: Point) -> Vec<Point>
             return Vec::new()
         }
     }
-    return vec!(p1, c1, c2, p2)
+    else {
+        // straddles one corner
+        let t = 0.0;
+        let b = WIN_HEIGHT as f32;
+        let l = 0.0;
+        let r = WIN_WIDTH as f32;
+
+        if c1.y == t {
+            if c2.x == l { // top and left
+                return vec!(p1, c1, Point::new(0.0, 0.0), c2, p2)
+            }
+            else { // top and right
+                return vec!(p1, c1, Point::new(WIN_WIDTH as f32, 0.0), c2, p2)
+            }
+        }
+        if c1.x == l {
+            if c2.y == t { // left and top
+                return vec!(p1, c1, Point::new(0.0, 0.0), c2, p2)
+            }
+            else { // left and bot
+                return vec!(p1, c1, Point::new(0.0, WIN_HEIGHT as f32), c2, p2)
+            }
+        }
+        if c1.y == b {
+            if c2.x == l { // bot and left
+                return vec!(p1, c1, Point::new(0.0, WIN_HEIGHT as f32), c2, p2)
+            }
+            else { // bot and right
+                return vec!(p1, c1, Point::new(WIN_WIDTH as f32, WIN_HEIGHT as f32), c2, p2)
+            }
+        }
+        if c1.x == r {
+            if c2.y == t { // right and top
+                return vec!(p1, c1, Point::new(WIN_WIDTH as f32, 0.0), c2, p2)
+            }
+            else { // right and bot
+                return vec!(p1, c1, Point::new(WIN_WIDTH as f32, WIN_HEIGHT as f32), c2, p2)
+            }
+        }
+        unreachable!()
+    }
 }
 
 pub fn wide_corners(r: Rect, x: f32, y: f32) -> (Point, Point) {

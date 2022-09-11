@@ -66,11 +66,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     let mut can_draw = state.test_points.len() > 0;
     for p in state.test_points.iter() {
-        if p.x >= 0.0 && p.x <= WIN_WIDTH as f32 && p.y >= 0.0 && p.y <= WIN_HEIGHT as f32 {
-            d.circle(5.0).position(p.x,p.y).color(Color::GREEN);
-        }
-        else {
-            println!("Could not draw point.");
+        if !(p.x >= 0.0 && p.x <= WIN_WIDTH as f32 && p.y >= 0.0 && p.y <= WIN_HEIGHT as f32) {
             can_draw = false;
         }
     }
@@ -87,4 +83,3 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     gfx.render(&d);
 }
-
