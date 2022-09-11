@@ -1,12 +1,14 @@
 pub mod tilemap;
 pub mod rect;
 pub mod fow;
+pub mod point;
+pub mod line;
 
 use notan::draw::*;
 use notan::prelude::*;
 use std::process;
 use rect::*;
-use fow::*;
+use point::*;
 
 const WIN_WIDTH: i32 = 1280;
 const WIN_HEIGHT: i32 = 720;
@@ -47,33 +49,24 @@ fn update(app: &mut App, state: &mut State) {
         process::exit(0);
     }
     (state.mouse_pos.x, state.mouse_pos.y) = app.mouse.position();
-    state.test_points = fow::gen_fow_polygon(state.collision_rects[0], state.mouse_pos);
+    state.test_points = fow::gen_fow_polygon(state.collision_rects[4], state.mouse_pos);
 }
 
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
-    // let mut mask = gfx.create_draw();
-    // mask.rect((128.0,128.0), (128.0,128.0));
-
     let mut d = gfx.create_draw();
     d.clear(Color::BLACK);
-    // d.mask(Some(&mask));
+
     state.map.draw(&mut d);
     for r in &state.collision_rects {
         r.draw(&mut d);
     }
-    // d.path()
-    //     .move_to(64.0, 64.0)
-    //     .line_to(32.0, 128.0)
-    //     .line_to(45.0, 160.0)
-    //     .line_to(64.0+32.0, 128.0)
-    //     .close().fill().color(Color::PURPLE);
+
     d.circle(5.0).position(state.mouse_pos.x, state.mouse_pos.y).color(Color::BLUE);
-    println!("*****");
-    let mut can_draw = true;
+
+    let mut can_draw = state.test_points.len() > 0;
     for p in state.test_points.iter() {
-        println!("{}", p);
-        if(p.x >= 0.0 && p.x <= WIN_WIDTH as f32 && p.y >= 0.0 && p.y <= WIN_HEIGHT as f32) {
+        if p.x >= 0.0 && p.x <= WIN_WIDTH as f32 && p.y >= 0.0 && p.y <= WIN_HEIGHT as f32 {
             d.circle(5.0).position(p.x,p.y).color(Color::GREEN);
         }
         else {
@@ -82,19 +75,16 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         }
     }
     if can_draw {
-        d.path().fill()
-            .move_to(state.test_points[0].x, state.test_points[0].y)
-            .line_to(state.test_points[1].x, state.test_points[1].y)
-            .line_to(state.test_points[2].x, state.test_points[2].y)
-            .line_to(state.test_points[3].x, state.test_points[3].y)
-            .close()
-            .color(Color::PINK)
-            .alpha(0.5);
-
+        let mut x = d.path();
+        x.fill().move_to(state.test_points[0].x, state.test_points[0].y);
+        for p in state.test_points.iter() {
+            x.line_to(p.x, p.y);
+        }
+        x.line_to(state.test_points[0].x, state.test_points[0].y);
+        x.close().color(Color::PINK).alpha(0.5);
     }
-    // d.line(state.mouse_pos.to_tuple(), state.corners.0.to_tuple());
-    // d.line(state.mouse_pos.to_tuple(), state.corners.1.to_tuple());
-    // d.mask(None);
+
+
     gfx.render(&d);
 }
 
