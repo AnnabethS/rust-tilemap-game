@@ -9,16 +9,18 @@ use notan::prelude::*;
 use std::process;
 use rect::*;
 use point::*;
+use fow::*;
 
 const WIN_WIDTH: i32 = 1280;
 const WIN_HEIGHT: i32 = 720;
 
 #[derive(AppState)]
-struct State {
+pub struct State {
     map: tilemap::TileMap,
     collision_rects: Vec<Rect>,
     mouse_pos: Point,
-    test_points: Vec<Point>,
+    fow: FoW,
+    // test_points: Vec<Point>,
 }
 
 
@@ -36,9 +38,9 @@ fn init(gfx: &mut Graphics) -> State {
     let mut rects: Vec<Rect> = Vec::new();
     let s = State {
         map: tilemap::TileMap::new_from_file("test.map", gfx, &mut rects),
-        collision_rects: rects,
+        collision_rects: rects.clone(),
         mouse_pos: Point { x : 0.0, y : 0.0 },
-        test_points: Vec::new(),
+        fow: FoW::new(gfx, rects)
     };
     s
 }
@@ -49,7 +51,7 @@ fn update(app: &mut App, state: &mut State) {
         process::exit(0);
     }
     (state.mouse_pos.x, state.mouse_pos.y) = app.mouse.position();
-    state.test_points = fow::gen_fow_polygon(state.collision_rects[4], state.mouse_pos);
+    state.fow.update(state.mouse_pos, &state.collision_rects);
 }
 
 
@@ -64,22 +66,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     d.circle(5.0).position(state.mouse_pos.x, state.mouse_pos.y).color(Color::BLUE);
 
-    let mut can_draw = state.test_points.len() > 0;
-    for p in state.test_points.iter() {
-        if !(p.x >= 0.0 && p.x <= WIN_WIDTH as f32 && p.y >= 0.0 && p.y <= WIN_HEIGHT as f32) {
-            can_draw = false;
-        }
-    }
-    if can_draw {
-        let mut x = d.path();
-        x.fill().move_to(state.test_points[0].x, state.test_points[0].y);
-        for p in state.test_points.iter() {
-            x.line_to(p.x, p.y);
-        }
-        x.line_to(state.test_points[0].x, state.test_points[0].y);
-        x.close().color(Color::PINK).alpha(0.5);
-    }
-
+    state.fow.draw_2(gfx, &mut d);
+    // state.fow.draw(&mut d);
 
     gfx.render(&d);
 }

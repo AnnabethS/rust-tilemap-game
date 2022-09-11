@@ -1,11 +1,104 @@
 use libm::acos;
+use notan::draw::Draw;
+use notan::math::*;
 
+use notan::draw::*;
+use notan::prelude::*;
 use crate::{Point, WIN_WIDTH, WIN_HEIGHT};
 use crate::line::Line;
 
 pub use crate::rect::Rect;
+pub use crate::State;
+
+pub struct FoW {
+    pub polys: Vec<Vec<Point>>,
+    rt: RenderTexture,
+    collision_rects: Vec<Rect>,
+}
+
+impl FoW {
+    pub fn new(gfx: &mut Graphics, cr: Vec<Rect>) -> FoW {
+        FoW {
+            polys: Vec::new(),
+            rt: gfx.create_render_texture(WIN_WIDTH, WIN_HEIGHT)
+                   .with_filter(TextureFilter::Linear, TextureFilter::Linear)
+                   .build()
+                   .unwrap(),
+            collision_rects: cr.clone(),
+        }
+    }
+
+    pub fn update(&mut self, playerpos: Point, rects: &Vec<Rect>) {
+        self.polys = Vec::new();
+        for r in rects.iter() {
+            self.polys.push(gen_fow_polygon(r.clone(), playerpos));
+        }
+    }
+
+    pub fn draw(&self, d: &mut Draw) {
+        for polygon in self.polys.iter() {
+            let mut can_draw = polygon.len() > 0;
+            for point in polygon.iter() {
+                if !(point.x >= 0.0 && point.x <= WIN_WIDTH as f32 && point.y >= 0.0 && point.y <= WIN_HEIGHT as f32) {
+                    can_draw = false;
+                }
+            }
+            if can_draw {
+                let mut path_builder = d.path();
+                path_builder.fill().move_to(polygon[0].x, polygon[0].y);
+                for point in polygon.iter() {
+                    path_builder.line_to(point.x, point.y);
+                }
+                path_builder.line_to(polygon[0].x, polygon[0].y);
+                path_builder.close().color(Color::BLACK);
+            }
+        }
+    }
+
+    pub fn draw_2(&mut self, gfx: &mut Graphics, d: &mut Draw) {
+        let rt_draw:&mut Draw = &mut self.rt.create_draw();
+        rt_draw.clear(Color::new(0.0, 0.0, 0.0, 0.0));
+
+        for polygon in self.polys.iter() {
+            let mut can_draw = polygon.len() > 0;
+            for point in polygon.iter() {
+                if !(point.x >= 0.0 && point.x <= WIN_WIDTH as f32 &&
+                     point.y >= 0.0 && point.y <= WIN_HEIGHT as f32) {
+                    can_draw = false;
+                }
+            }
+            if can_draw {
+                let mut path_builder = rt_draw.path();
+                path_builder.fill().move_to(polygon[0].x, Self::unfuck_y(polygon[0].y));
+                for point in polygon.iter() {
+                    path_builder.line_to(point.x, Self::unfuck_y(point.y));
+                }
+                path_builder.line_to(polygon[0].x, Self::unfuck_y(polygon[0].y));
+                path_builder.close().color(Color::BLACK);
+            }
+        }
+
+        for r in self.collision_rects.iter() {
+            rt_draw.rect((r.x, Self::unfuck_y(r.y) - 32.0), (r.w, r.h))
+                .color(Color::BLACK);
+        }
+
+        gfx.render_to(&self.rt, rt_draw);
+
+        d.image(&self.rt.texture()).alpha(0.5)
+            .position(0.0, 0.0);
+    }
 
 
+    //TODO: figure out why this is necessary
+    fn unfuck_y(y: f32) -> f32 {
+        (WIN_HEIGHT as f32 / 2.0) + (-1.0 * (y - (WIN_HEIGHT as f32 / 2.0)))
+    }
+}
+
+
+//FIXME: this is a stupid way to do this, it should be
+//an immuatble reference to both
 pub fn gen_fow_polygon(r: Rect, player: Point) -> Vec<Point>
 {
     let (mut p1, mut p2) = wide_corners(r, player.x, player.y);
