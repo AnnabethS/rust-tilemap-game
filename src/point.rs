@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ops::{AddAssign, Add}};
 
 #[derive(Clone, Copy)]
 pub struct Point {
@@ -24,6 +24,26 @@ impl Point {
             (p1.y < check.y && check.y < p2.y) || (p2.y < check.y && check.y < p1.y)
     }
 
+    pub fn add(&mut self, other: &Point) {
+        self.x += other.x;
+        self.y += other.y;
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, rhs: Self) {
+        self.add(&rhs);
+    }
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut out = self.clone();
+        Point::add(&mut out, &rhs);
+        out
+    }
 }
 
 impl fmt::Display for Point {
