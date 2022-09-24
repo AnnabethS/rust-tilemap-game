@@ -1,20 +1,22 @@
 use std::fmt;
 
 use notan::prelude::*;
+use notan::draw::*;
 
-use crate::{point::*, State};
+use crate::fow::Rect;
+use crate::point::*;
 
 pub struct Player {
-    position: Point,
+    pub position: Point,
     speed: f32,
 }
 
 impl Player {
-    pub fn update(&mut self, app: &App) {
-        self.mv(app);
+    pub fn update(&mut self, app: &App, collision_rects: &Vec<Rect>) {
+        self.mv(app, collision_rects);
     }
 
-    pub fn mv(&mut self, app: &App) {
+    pub fn mv(&mut self, app: &App, collision_rects: &Vec<Rect>) {
         let vert;
         if app.keyboard.is_down(KeyCode::W) || app.keyboard.is_down(KeyCode::Up) {
             vert = -1.0;
@@ -46,16 +48,43 @@ impl Player {
             mv_amount.y *= scale;
         }
 
-        self.position += mv_amount;
+        if self.can_do_move(&mv_amount, collision_rects) {
+            self.position += mv_amount;
+        }
+        else if self.can_do_move(&Point::new(mv_amount.x, 0.0), collision_rects) {
+            self.position.x += mv_amount.x;
+        }
+        else if self.can_do_move(&Point::new(0.0, mv_amount.y), collision_rects) {
+            self.position.y += mv_amount.y;
+        }
+
     }
 
     pub fn new(x: f32, y: f32) -> Player {
         Player {
             position: Point::new(x, y),
-            speed: 5.0
+            speed: 3.0
         }
     }
+
+    pub fn draw(&self, d: &mut Draw) {
+        d.circle(10.0)
+            .position(self.position.x, self.position.y)
+            .fill()
+            .color(Color::PINK);
+    }
+
+    fn can_do_move(&self, mv_amnt: &Point, collision_rects: &Vec<Rect>) -> bool {
+        let new_pos = self.position + *mv_amnt;
+        for r in collision_rects.iter() {
+            if r.contains_point(&new_pos) {
+                return false;
+            }
+        }
+        true
+    }
 }
+
 
 impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

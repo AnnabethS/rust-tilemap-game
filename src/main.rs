@@ -20,7 +20,6 @@ const WIN_HEIGHT: i32 = 720;
 pub struct State {
     map: tilemap::TileMap,
     collision_rects: Vec<Rect>,
-    mouse_pos: Point,
     fow: FoW,
     player: Player
 }
@@ -41,7 +40,6 @@ fn init(gfx: &mut Graphics) -> State {
     let s = State {
         map: tilemap::TileMap::new_from_file("test.map", gfx, &mut rects),
         collision_rects: rects.clone(),
-        mouse_pos: Point { x : 0.0, y : 0.0 },
         fow: FoW::new(gfx, rects),
         player: Player::new(50.0, 50.0),
     };
@@ -53,10 +51,8 @@ fn update(app: &mut App, state: &mut State) {
     app.keyboard.is_down(KeyCode::Q) {
         process::exit(0);
     }
-    (state.mouse_pos.x, state.mouse_pos.y) = app.mouse.position();
-    state.fow.update(state.mouse_pos, &state.collision_rects);
-    state.player.update(app);
-    println!("{}", state.player);
+    state.fow.update(state.player.position, &state.collision_rects);
+    state.player.update(app, &state.collision_rects);
 }
 
 
@@ -69,7 +65,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         r.draw(&mut d);
     }
 
-    d.circle(5.0).position(state.mouse_pos.x, state.mouse_pos.y).color(Color::BLUE);
+    state.player.draw(&mut d);
 
     state.fow.draw(gfx, &mut d);
 

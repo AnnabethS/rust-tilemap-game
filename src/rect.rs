@@ -1,6 +1,8 @@
 use notan::prelude::*;
 use notan::draw::*;
 
+use crate::point::*;
+
 #[derive(Copy, Clone)]
 pub struct Rect {
     pub x: f32,
@@ -20,5 +22,10 @@ impl Rect {
 
     pub fn draw(&self, d: &mut Draw) {
         d.rect((self.x, self.y), (self.w, self.h)).color(Color::RED).stroke(1.0);
+    }
+
+    pub fn contains_point(&self, p: &Point) -> bool {
+        p.x >= self.x && p.x < self.x + self.w &&
+        p.y >= self.y && p.y < self.y + self.h
     }
 }
