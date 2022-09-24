@@ -35,27 +35,7 @@ impl FoW {
         }
     }
 
-    pub fn draw(&self, d: &mut Draw) {
-        for polygon in self.polys.iter() {
-            let mut can_draw = polygon.len() > 0;
-            for point in polygon.iter() {
-                if !(point.x >= 0.0 && point.x <= WIN_WIDTH as f32 && point.y >= 0.0 && point.y <= WIN_HEIGHT as f32) {
-                    can_draw = false;
-                }
-            }
-            if can_draw {
-                let mut path_builder = d.path();
-                path_builder.fill().move_to(polygon[0].x, polygon[0].y);
-                for point in polygon.iter() {
-                    path_builder.line_to(point.x, point.y);
-                }
-                path_builder.line_to(polygon[0].x, polygon[0].y);
-                path_builder.close().color(Color::BLACK);
-            }
-        }
-    }
-
-    pub fn draw_2(&mut self, gfx: &mut Graphics, d: &mut Draw) {
+    pub fn draw(&mut self, gfx: &mut Graphics, d: &mut Draw) {
         let rt_draw:&mut Draw = &mut self.rt.create_draw();
         rt_draw.clear(Color::new(0.0, 0.0, 0.0, 0.0));
 

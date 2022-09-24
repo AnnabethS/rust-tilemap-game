@@ -20,7 +20,6 @@ pub struct State {
     collision_rects: Vec<Rect>,
     mouse_pos: Point,
     fow: FoW,
-    // test_points: Vec<Point>,
 }
 
 
@@ -66,8 +65,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     d.circle(5.0).position(state.mouse_pos.x, state.mouse_pos.y).color(Color::BLUE);
 
-    state.fow.draw_2(gfx, &mut d);
-    // state.fow.draw(&mut d);
+    state.fow.draw(gfx, &mut d);
 
     gfx.render(&d);
 }
