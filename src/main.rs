@@ -38,7 +38,7 @@ fn main() -> Result<(), String> {
 fn init(gfx: &mut Graphics) -> State {
     let mut rects: Vec<Rect> = Vec::new();
     let s = State {
-        map: tilemap::TileMap::new_from_file("test.map", gfx, &mut rects),
+        map: tilemap::TileMap::new_from_file("maps/test.map", gfx, &mut rects),
         collision_rects: rects.clone(),
         fow: FoW::new(gfx, rects),
         player: Player::new(50.0, 50.0),
