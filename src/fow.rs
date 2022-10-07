@@ -49,30 +49,25 @@ impl FoW {
             }
             if can_draw {
                 let mut path_builder = rt_draw.path();
-                path_builder.fill().move_to(polygon[0].x, Self::unfuck_y(polygon[0].y));
+                path_builder.fill().move_to(polygon[0].x, polygon[0].y);
                 for point in polygon.iter() {
-                    path_builder.line_to(point.x, Self::unfuck_y(point.y));
+                    path_builder.line_to(point.x, point.y);
                 }
-                path_builder.line_to(polygon[0].x, Self::unfuck_y(polygon[0].y));
+                path_builder.line_to(polygon[0].x, polygon[0].y);
                 path_builder.close().color(Color::BLACK);
             }
         }
 
         for r in self.collision_rects.iter() {
-            rt_draw.rect((r.x, Self::unfuck_y(r.y) - 32.0), (r.w, r.h))
+            rt_draw.rect((r.x, r.y), (r.w, r.h))
                 .color(Color::BLACK);
         }
 
         gfx.render_to(&self.rt, rt_draw);
 
         d.image(&self.rt.texture()).alpha(0.5)
-            .position(0.0, 0.0);
-    }
-
-
-    //TODO: figure out why this is necessary
-    fn unfuck_y(y: f32) -> f32 {
-        (WIN_HEIGHT as f32 / 2.0) + (-1.0 * (y - (WIN_HEIGHT as f32 / 2.0)))
+            .position(0.0, 0.0)
+            .scale_from((WIN_WIDTH as f32 / 2.0, WIN_HEIGHT as f32 / 2.0), (1.0, -1.0));
     }
 }
 
