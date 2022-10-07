@@ -1,0 +1,40 @@
+name: rust build & release
+
+on:
+  push:
+    branches: ["main", "ci-test"]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: build executable
+      run: cargo build --verbose
+
+    - name: move / rename executable
+      run: mv target/debug/rust-tilemap-test game
+
+    - name: zip relevant files
+      uses: TheDoctor0/zip-release@0.6.2
+      with:
+        type: 'zip'
+        filename: 'release-linux.zip'
+        path: game maps/
+
+    - name: upload & add to releases
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest-linux"
+        prerelease: false
+        title: "Latest Linux Build (UNSTABLE)"
+        files: |
+          release-linux.zip
